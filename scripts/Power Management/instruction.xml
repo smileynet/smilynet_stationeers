@@ -3,10 +3,11 @@
   <DateTime>133804148992312135</DateTime>
   <GameVersion>0.2.5370.24111</GameVersion>
   <Title>Power Management</Title>
-  <Description>Manages and displays power related functions​</Description>
+  <Description>Manages power sources and displays power related functions.​</Description>
   <Author>SMiLeY.NET</Author>
   <WorkshopFileHandle>0</WorkshopFileHandle>
-  <Instructions>alias Self db
+  <Instructions>### Power Management ###
+alias Self db
 alias CablePowIn d0
 alias CablePowOut d1
 alias DaySensor d2
@@ -19,6 +20,17 @@ alias VerticalAngle r3
 alias AdjustedHorizontalAngle r4
 alias AdjustedVerticalAngle r5
 alias AdjustmentValue r6
+alias Error r7 # Also used as Proportional
+alias Proportional r7
+alias PreviousError r8
+alias Integral r9
+alias Derivative r10
+alias Setpoint r11
+
+define Time 1
+define ProportionalGain 1
+define IntegralGain 1
+define DerivativeGain 1
 
 define PanelHorizontalOffset 180
 define PanelVerticalOffset 90
@@ -40,7 +52,7 @@ sbn MediumLEDHash PowerOutLED Color Color.Red
 
 Main:
 yield
-jal HandlePowerInOut
+jal HandlePowerConsumption
 l PowerInputAmt CablePowIn PowerActual
 sbn MediumLEDHash PowerInLED Setting PowerInputAmt
 l PowerOutputAmt CablePowOut PowerActual
@@ -48,7 +60,7 @@ sbn MediumLEDHash PowerOutLED Setting PowerOutputAmt
 bdseal DaySensor HandleSolar
 j Main
 
-HandlePowerInOut:
+HandlePowerConsumption:
 lbn PowerInputAmt CableAnalyzerHash CableAnalyzerIn PowerActual 0
 sbn MediumLEDHash PowerInLED Setting PowerInputAmt
 lbn PowerOutputAmt CableAnalyzerHash CableAnalyzerOut PowerActual 0
@@ -62,5 +74,22 @@ add AdjustedHorizontalAngle HorizontalAngle PanelHorizontalOffset
 sub AdjustedVerticalAngle PanelVerticalOffset VerticalAngle
 sb SolarPanelHash Horizontal AdjustedHorizontalAngle
 sb SolarPanelHash Vertical AdjustedVerticalAngle
-j ra</Instructions>
+j ra
+
+HandleFuelGenerator:
+# setpoint =  input - output + current_amt
+
+
+previous_error := 0
+integral := 0
+loop:
+   error := setpoint − measured_value
+   proportional := error;
+   integral := integral + error × dt
+   derivative := (error - previous_error) / dt
+   output := Kp × proportional + Ki × integral + Kd × derivative
+   previous_error := error
+   wait(dt)
+   goto loop
+</Instructions>
 </InstructionData>
