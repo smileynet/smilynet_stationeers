@@ -10,7 +10,7 @@
 alias Self db
 # alias CablePowIn d0
 # alias CablePowOut d1
-# alias DaySensor d2 
+# alias DaySensor d2
 
 # Capacity
 alias PowerInputAmt r0
@@ -23,23 +23,22 @@ alias AdjustedHorizontalAngle r4
 alias AdjustedVerticalAngle r5
 
 # PID
-alias Error r6
+alias PIDError r6
 alias Proportional r7
 alias PreviousError r8
 alias Integral r9
 alias Derivative r10
 alias Setpoint r11
-alias Output r12
+alias PIDOutput r12
 
 alias CurrentGeneratorOutput r13
 
-define Time 1
-define ProportionalGain 1
-define IntegralGain 1
-define DerivativeGain 1
+define PIDTime 1
+define ProportionalGain 0.01
+define IntegralGain 0.01
+define DerivativeGain 0.1
 
-define PressureMin 0
-define PressureMax 30000
+define BaseOutput 1300
 
 define PanelHorizontalOffset 180
 define PanelVerticalOffset 90
@@ -69,18 +68,16 @@ move Integral 0
 Main:
 yield
 jal HandlePowerConsumption
-lbn PowerInputAmt CableAnalyzerHash CableAnalyzerIn PowerActual
-sbn MediumLEDHash PowerInLED Setting PowerInputAmt
-lbn PowerOutputAmt CableAnalyzerHash CableAnalyzerOut PowerActual
-sbn MediumLEDHash PowerOutLED Setting PowerOutputAmt
-bdseal DaySensor HandleSolar
+jal HandleSolar
+jal HandleFuelGenerator
 j Main
 
 HandlePowerConsumption:
-lbn PowerInputAmt CableAnalyzerHash CableAnalyzerIn PowerActual 0
+lbn PowerInputAmt CableAnalyzerHash CableAnalyzerIn PowerActual Maximum
 sbn MediumLEDHash PowerInLED Setting PowerInputAmt
-lbn PowerOutputAmt CableAnalyzerHash CableAnalyzerOut PowerActual 0
+lbn PowerOutputAmt CableAnalyzerHash CableAnalyzerOut PowerActual Maximum
 sbn MediumLEDHash PowerOutLED Setting PowerOutputAmt
+j ra
 
 HandleSolar:
 lb HorizontalAngle DaySensorHash Horizontal Maximum
@@ -92,22 +89,24 @@ sb SolarPanelHash Vertical AdjustedVerticalAngle
 j ra
 
 HandleFuelGenerator:
-lb CurrentGeneratorOutput FuelGeneratorHash PowerGeneration Sum
+lb CurrentGeneratorOutput GasFuelGenerator PowerGeneration Sum
+sb GasFuelGenerator On 1
 sub Setpoint PowerOutputAmt PowerInputAmt
 add Setpoint Setpoint CurrentGeneratorOutput
-sub Error Setpoint CurrentGeneratorOutput
-move Proportional Error
+sub PIDError Setpoint CurrentGeneratorOutput
+move Proportional PIDError
 mul Proportional Proportional ProportionalGain
-add Integral Integral Error
-mul Integral Integral Time
+add Integral Integral PIDError
+mul Integral Integral PIDTime
 mul Integral Integral IntegralGain
-sub Derivative Error PreviousError
-mul Derivative Derivative Time
+sub Derivative PIDError PreviousError
+mul Derivative Derivative PIDTime
 mul Derivative Derivative DerivativeGain
-add Output Proportional Integral
-add Ouput Output Derivative
-move PreviousError Error
-sbn VolumePump GFGPump Setting Output
-j ra
-</Instructions>
+add PIDOutput Proportional Integral
+add PIDOutput PIDOutput Derivative
+div PIDOutput PIDOutput BaseOutput
+s Self Setting PIDOutput
+move PreviousError PIDError
+sbn VolumePump GFGPump Setting PIDOutput
+j ra</Instructions>
 </InstructionData>
