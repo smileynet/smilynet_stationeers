@@ -30,14 +30,16 @@ alias Integral r9
 alias Derivative r10
 alias Setpoint r11
 alias PIDOutput r12
-
 alias CurrentGeneratorOutput r13
+alias WaitTime r14
 
-define PIDTime 1
+
+define PIDTime 3
 define ProportionalGain 0.01
 define IntegralGain 0.01
 define DerivativeGain 0.1
 
+define TickLength 0.5
 define BaseOutput 1300
 
 define PanelHorizontalOffset 180
@@ -62,6 +64,8 @@ sbn MediumLEDHash PowerInLED Mode PowerMode
 sbn MediumLEDHash PowerInLED Color Color.Green
 sbn MediumLEDHash PowerOutLED Mode PowerMode
 sbn MediumLEDHash PowerOutLED Color Color.Red
+sbn VolumePump GFGPump On 1
+move WaitTime PID Time
 move PreviousError 0
 move Integral 0
 
@@ -89,6 +93,12 @@ sb SolarPanelHash Vertical AdjustedVerticalAngle
 j ra
 
 HandleFuelGenerator:
+sub WaitTime WaitTime TickLength
+brlez WaitTime UpdatePID
+j ra
+
+UpdatePID:
+move WaitTime PIDTime
 lb CurrentGeneratorOutput GasFuelGenerator PowerGeneration Sum
 sb GasFuelGenerator On 1
 sub Setpoint PowerOutputAmt PowerInputAmt
