@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133800638192230678</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Filtration Handler</Title>
+  <Description>Logic for filtration unit​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>### Filtration Handler ###
+alias Self db
+
+alias CurrentTemp r0
+alias CurrentGasAmount r1
+# TODO: Implement filter checking
+
+define MinTemp 283.15 # 10C
+define MaxTemp 298.15 # 25C
+define MinGasRatio 0.1
+define Idle 0
+define Active 1
+
+
+Reset:
+s Self Mode Idle
+j Main
+
+Main:
+yield
+l CurrentTemp Self TemperatureInput
+l CurrentGasAmount Self RatioCarbonDioxideInput
+blt CurrentTemp MinTemp Main
+bgt CurrentTemp MaxTemp Main
+bgt CurrentGasAmount MinGasRatio DoFiltration
+j Reset
+
+DoFiltration:
+s Self Mode Active
+j Main</Instructions>
+</InstructionData>

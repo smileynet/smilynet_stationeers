@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133787581508843940</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Combustion Centerfuge</Title>
+  <Description>​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>alias cc db
+alias alert d0
+
+init:
+s alert On 1
+j setup
+
+setup:
+yield
+s cc On 1
+s cc Open 1
+s cc CombustionLimiter 0
+s cc Throttle 0
+l r10 cc Reagents
+bgt r10 2 setup
+l r11 cc Stress
+bgt r11 0 setup
+s cc Open 0
+bdns alert startup
+s alert On 0
+j startup
+
+startup:
+yield
+s cc On 1
+s cc Throttle 10
+s cc CombustionLimiter 10
+l r0 cc Rpm
+blt r0 250 startup
+s cc Throttle 20
+s cc CombustionLimiter 20
+l r0 cc Rpm
+blt r0 280 startup
+s cc Throttle 40
+s cc CombustionLimiter 40
+l r0 cc Rpm
+blt r0 340 startup
+s cc Throttle 60
+s cc CombustionLimiter 60
+l r0 cc Rpm
+blt r0 425 startup
+s cc Throttle 80
+s cc CombustionLimiter 80
+l r0 cc Rpm
+blt r0 470 startup
+s cc Throttle 100
+s cc CombustionLimiter 100
+l r0 cc Rpm
+blt r0 470 startup
+j main
+
+main:
+yield
+l r10 cc Reagents
+blt r10 500 main
+j shutdown
+
+shutdown:
+yield
+s cc Throttle 0
+s cc CombustionLimiter 0
+l r0 cc Rpm
+bgt r0 5 shutdown
+s alert On 1
+j setup</Instructions>
+</InstructionData>

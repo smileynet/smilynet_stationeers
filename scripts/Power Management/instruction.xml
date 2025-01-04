@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133804148992312135</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Power Management</Title>
+  <Description>Manages and displays power related functions​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>alias Self db
+alias CablePowIn d0
+alias CablePowOut d1
+alias DaySensor d2
+alias AdjustmentDial d3
+
+alias PowerInputAmt r0
+alias PowerOutputAmt r1
+alias HorizontalAngle r2
+alias VerticalAngle r3
+alias AdjustedHorizontalAngle r4
+alias AdjustedVerticalAngle r5
+alias AdjustmentValue r6
+
+define PanelHorizontalOffset 180
+define PanelVerticalOffset 90
+define CableAnalyzerHash HASH("StructureCableAnalysizer")
+define CableAnalyzerIn HASH("Cable Analyzer - Power In")
+define CableAnalyzerOut HASH("Cable Analyzer - Power Out")
+define MediumLEDHash -53151617
+define PowerInLED HASH("LED - Power In")
+define PowerOutLED HASH("LED - Power Out")
+define SolarPanelHash -539224550
+
+define PowerMode 2
+
+Init:
+sbn MediumLEDHash PowerInLED Mode PowerMode
+sbn MediumLEDHash PowerInLED Color Color.Green
+sbn MediumLEDHash PowerOutLED Mode PowerMode
+sbn MediumLEDHash PowerOutLED Color Color.Red
+
+Main:
+yield
+jal HandlePowerInOut
+l PowerInputAmt CablePowIn PowerActual
+sbn MediumLEDHash PowerInLED Setting PowerInputAmt
+l PowerOutputAmt CablePowOut PowerActual
+sbn MediumLEDHash PowerOutLED Setting PowerOutputAmt
+bdseal DaySensor HandleSolar
+j Main
+
+HandlePowerInOut:
+lbn PowerInputAmt CableAnalyzerHash CableAnalyzerIn PowerActual 0
+sbn MediumLEDHash PowerInLED Setting PowerInputAmt
+lbn PowerOutputAmt CableAnalyzerHash CableAnalyzerOut PowerActual 0
+sbn MediumLEDHash PowerOutLED Setting PowerOutputAmt
+
+HandleSolar:
+l AdjustmentValue AdjustmentDial Setting
+l HorizontalAngle DaySensor Horizontal
+l VerticalAngle DaySensor Vertical
+add AdjustedHorizontalAngle HorizontalAngle PanelHorizontalOffset
+sub AdjustedVerticalAngle PanelVerticalOffset VerticalAngle
+sb SolarPanelHash Horizontal AdjustedHorizontalAngle
+sb SolarPanelHash Vertical AdjustedVerticalAngle
+j ra</Instructions>
+</InstructionData>

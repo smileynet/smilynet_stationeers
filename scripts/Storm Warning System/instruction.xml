@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133799529843980018</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Storm Warning System</Title>
+  <Description>Handles storm related notification systems​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>alias Self db
+
+alias StormState r1
+alias StormCountdown r2
+alias AlertPlayed r3
+alias MusicPlayed r4
+alias CurrentSolarAngle r5
+alias CurrentSolarHorizontal r6
+alias GrowlightActive r7
+
+define StormIncoming 1
+define StormActive 2
+define SoundStormIncoming 18
+define SoundStormMusic 7
+define KlaxonHash HASH("StructureKlaxon")
+define WeatherStationHash HASH("StructureWeatherStation")
+define FlashingLightsHash HASH("StructureFlashingLight")
+define WarningLights HASH("Flashing Light - Storm Warning")
+define DaySensorHash HASH("StructureDaylightSensor")
+define SmallLEDHash HASH("StructureConsoleLED5")
+define StormLED HASH("LED - Storm Countdown")
+define GrowLightHash HASH("StructureGrowLight")
+define SolarTotal 180
+define NighttimeAngle 112.5
+
+
+Reset:
+sbn FlashingLightsHash WarningLights On 0
+sb KlaxonHash On 0
+sb KlaxonHash Mode SoundStormIncoming
+sb KlaxonHash Volume 100
+move AlertPlayed 0
+move MusicPlayed 0
+j Main
+
+Main:
+yield
+jal HandleGrowlights
+jal HandleStorm
+jal TimeToSunrise
+sleep 10
+j Reset
+
+HandleGrowlights:
+lb CurrentSolarAngle DaySensorHash SolarAngle Maximum
+slt GrowlightActive CurrentSolarAngle NighttimeAngle
+sb GrowLightHash On GrowlightActive
+j ra
+
+HandleStorm:
+lb StormState WeatherStationHash Mode Maximum
+lb StormCountdown WeatherStationHash NextWeatherEventTime Maximum
+beq StormState StormIncoming IncomingStorm
+beq StormState StormActive ActiveStorm
+j ra
+
+IncomingStorm:
+# TODO: Play verbal alert periodically between music
+sbn SmallLEDHash StormLED Setting StormCountdown
+sbn FlashingLightsHash WarningLights On 1
+beqal AlertPlayed 0 PlayAlert
+j Main
+
+PlayAlert:
+sb KlaxonHash On 1
+sbn SmallLEDHash StormLED Color Color.Red
+move AlertPlayed 1
+j ra
+
+ActiveStorm:
+sbn SmallLEDHash StormLED Setting StormCountdown
+sbn SmallLEDHash StormLED Color Color.Red
+beqal MusicPlayed 0 PlayMusic
+j Main
+
+PlayMusic:
+sb KlaxonHash On 1
+sb KlaxonHash Mode SoundStormMusic
+move MusicPlayed 1
+j ra
+
+TimeToSunrise:
+# TODO: Handle horizontal modification
+lb CurrentSolarAngle DaySensorHash SolarAngle Maximum
+sbn SmallLEDHash StormLED Color Color.Yellow
+sbn SmallLEDHash StormLED Setting CurrentSolarAngle
+yield
+j ra</Instructions>
+</InstructionData>

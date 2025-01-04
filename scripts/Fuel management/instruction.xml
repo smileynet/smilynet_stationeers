@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133799915419921111</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Fuel management</Title>
+  <Description>Mixes and manages fuel​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>### Fuel Management ###
+alias Self db
+alias FuelTank d0
+alias OxygenInput d1
+alias VolatileInput d2
+alias FuelOutput d3
+
+alias VolatileRatio r0
+alias OxygenRatio r1
+alias FuelAmount r2
+
+define VolatileTarget 0.666
+define OxygenTarget 0.333
+define FuelExportQty 5000
+
+Init:
+s VolatileInput On 0
+s OxygenInput On 0
+s FuelOutput On 0
+
+Main:
+yield
+l VolatileRatio FuelTank RatioVolatiles
+l OxygenRatio FuelTank RatioOxygen
+blt VolatileRatio VolatileTarget AddVolatiles
+blt OxygenRatio OxygenTarget AddOxygen
+s VolatileInput On 0
+s OxygenInput On 0
+l FuelAmount FuelTank TotalMoles
+bgt FuelAmount FuelExportQty ExportFuel
+s FuelOutput On 0
+j Main
+
+AddVolatiles:
+s Self Setting VolatileRatio
+s VolatileInput On 1
+s OxygenInput On 0
+j Main
+
+AddOxygen:
+s Self Setting OxygenRatio
+s VolatileInput On 0
+s OxygenInput On 1
+j Main
+
+ExportFuel:
+s Self Setting FuelAmount
+s FuelOutput On 1
+j Main</Instructions>
+</InstructionData>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133792549581881976</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Hydropontics Management</Title>
+  <Description>This program will toggle grow lights and hydropontics station lights for growing crops.​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>### Hydropontics Management ###
+alias Self db
+alias DaySensor d0
+alias GasSensor d1
+alias Co2Tank d2
+alias Co2Intake d3
+alias N2Tank d4
+alias N2Intake d5
+
+alias CurrentAngle r0
+alias CurrentCo2Ratio r1
+alias NeedCo2 r2
+alias CurrentN2Ratio r3 # TODO: Implement N2 Handling
+alias TankCo2Temp r4
+alias AboveMinTemp r5
+alias BelowMaxTemp r6
+alias TankCo2Quantity r7
+
+define NighttimeAngle 112.5
+define MinCo2Temp 283.15
+define MaxCo2Temp 298.15
+define MinCo2Ratio 0.02
+define MaxCo2Ratio 0.04
+define GrowLightHash -1758710260
+define MediumLEDHash -53151617
+# TODO: define GrowLight and HydroStation hashes
+
+Main:
+yield
+l CurrentAngle DaySensor SolarAngle
+bdseal Co2Tank handleCo2
+blt CurrentAngle NighttimeAngle GrowLightOn
+bgt CurrentAngle NighttimeAngle GrowLightOff
+j Main
+
+handleCo2:
+l TankCo2Temp Co2Tank Temperature
+l TankCo2Quantity Co2Tank TotalMoles
+sbn MediumLEDHash HASH("LED - CO2 Quantity") Setting TankCo2Quantity
+sbn MediumLEDHash HASH("LED - CO2 Quantity") Color Color.Gray
+blt TankCo2Temp MinCo2Temp ra
+bgt TankCo2Temp MaxCo2Temp ra
+l CurrentCo2Ratio GasSensor RatioCarbonDioxide
+s Self Setting CurrentCo2Ratio
+bltal CurrentCo2Ratio MinCo2Ratio Co2IntakeOn
+bgtal CurrentCo2Ratio MaxCo2Ratio Co2IntakeOff
+j ra
+
+Co2IntakeOn:
+s Co2Intake On 1
+j ra
+
+Co2IntakeOff:
+s Co2Intake On 0
+j ra
+
+GrowLightOn:
+#sb -1758710260 On 1
+sb GrowLightHash On 1
+j Main
+
+GrowLightOff:
+sb GrowLightHash On 0
+j Main</Instructions>
+</InstructionData>

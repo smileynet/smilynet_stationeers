@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133792537529181823</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Solar Panel Tracking</Title>
+  <Description>From workshop​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>define SolarHorizontalAngle 0
+define EveningMorningAngle 85 #90=night,85=twilight
+
+alias DaySensor d0
+alias Dial d1
+alias NSignal d2
+
+fMain:
+jal fCalcVertical
+jal fCalcHorizontal
+jal fNightSignal
+yield
+j fMain
+
+fCalcHorizontal:
+move r10 ra
+jal fDialSettings
+pop r14
+brltz r14 3
+mul r14 90 r14
+jr 2
+mul r14 90 SolarHorizontalAngle
+brdse DaySensor 3
+lb r15 1076425094 Horizontal 0
+jr 2
+l r15 DaySensor Horizontal
+add r15 r15 r14
+breqz r0 2
+add r15 r14 270
+sb -2045627372 Horizontal r15
+sb -539224550 Horizontal r15
+sb -934345724 Horizontal r15
+sb -1545574413 Horizontal r15
+move ra r10
+j ra
+
+fCalcVertical:
+brdse DaySensor 3
+lb r15 1076425094 Vertical 0
+jr 2
+l r15 DaySensor Vertical
+sgt r1 r15 EveningMorningAngle
+brgt r15 95 3
+move r0 0
+jr 2
+move r0 1
+brgt r15 75 4
+sub r15 r15 90
+abs r15 r15
+jr 2
+move r15 15
+sb -2045627372 Vertical r15
+sb -539224550 Vertical r15
+sb -934345724 Vertical r15
+sb -1545574413 Vertical r15
+j ra
+
+fDialSettings:
+brdse Dial 3
+push -1
+j ra
+l r15 Dial PrefabHash
+breq r15 554524804 3
+push -1
+j ra
+s Dial Mode 3
+l r15 Dial Setting
+push r15
+j ra
+
+fNightSignal:
+brdse NSignal 2
+j ra
+l r15 NSignal PrefabHash
+brne r15 -851746783 3
+s NSignal Setting r1
+j ra
+s NSignal On r1 #err: On not supported
+j ra</Instructions>
+</InstructionData>

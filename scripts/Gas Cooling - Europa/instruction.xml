@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133798175819125042</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Gas Cooling - Europa</Title>
+  <Description>CO2 cooling (from waste gas), optionally to heat hab​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>### Gas Management - Europa ###
+alias GasIC db
+alias WasteTank d0
+alias WasteToggle d1
+alias HabSensor d2
+alias HabToggle d3
+alias OxygenSensor d4
+alias OxygenToggle d5
+
+alias GasTemp r0
+alias HabTemp r1
+alias OxygenTemp r2
+
+define HabTargetTemp 293.15 # 20C
+define GasTargetTemp 298.15 # 25C
+
+Start:
+yield
+l GasTemp WasteTank Temperature
+l HabTemp HabSensor Temperature
+l OxygenTemp OxygenSensor Temperature
+s GasIC Setting HabTemp
+bdseal HabToggle HandleHab
+bdseal WasteToggle HandleCooling
+bdseal OxygenToggle HandleOxygen
+j Start
+
+HandleHab:
+blt HabTemp HabTargetTemp doHeatHab
+j stopHeatHab
+
+HandleOxygen:
+blt OxygenTemp HabTargetTemp doHeatOxygen
+j stopHeatOxygen
+
+HandleCooling:
+bgt GasTemp GasTargetTemp doCooling
+j stopCooling
+
+doHeatHab:
+s HabToggle On 1
+j ra
+
+stopHeatHab:
+s HabToggle On 0
+j ra
+
+doCooling:
+s WasteToggle On 1
+j ra
+
+stopCooling:
+s WasteToggle On 0
+j ra
+
+doHeatOxygen:
+s OxygenToggle On 1
+j ra
+
+stopHeatOxygen:
+s OxygenToggle On 0
+j ra</Instructions>
+</InstructionData>

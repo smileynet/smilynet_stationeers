@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133801601215746904</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Rec Room Management</Title>
+  <Description>Handles ambiance for the rec room​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>### Rec Room ###
+alias Self db
+alias ShowerProximity d0
+alias ShowerSpeaker d1
+alias ShowerLight d2
+alias Shower d3
+
+alias InProximity r0
+
+define ShowerMusic 9
+define PreferredVolume 10
+define False 0
+define True 1
+define LongWideLightHash 555215790
+
+Init:
+s ShowerSpeaker Volume PreferredVolume
+s ShowerSpeaker Mode ShowerMusic
+s ShowerLight Color Color.Pink
+s ShowerLight On False
+s Shower On False
+s Shower Open False
+sbn LongWideLightHash HASH("Wall Light (Long Wide) - Rec Room") On True
+
+Main:
+yield
+l InProximity ShowerProximity Activate
+s Self Setting InProximity
+beq InProximity True PersonPresent
+s Shower On False
+s Shower Open False
+s ShowerSpeaker On False
+s ShowerLight On False
+sbn LongWideLightHash HASH("Wall Light (Long Wide) - Rec Room") On True
+j Main
+
+PersonPresent:
+s Shower On True
+s Shower Open True
+s ShowerSpeaker On True
+s ShowerLight On True
+sbn LongWideLightHash HASH("Wall Light (Long Wide) - Rec Room") On False
+j Main</Instructions>
+</InstructionData>

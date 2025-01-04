@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133802369635808305</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Temp Management</Title>
+  <Description>Two room temp management​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>### Temp Management ###
+alias Self db
+alias GFGIn d0
+alias GFGOut d1
+alias GFGSensor d2
+alias SterlingIn d3
+alias SterlingOut d4
+alias SterlingSensor d5
+
+alias GFGTemp r0
+alias GFGAboveTemp r1
+alias SterlingTemp r2
+alias SterlingAboveTemp r3
+define TargetTemp 283.15
+
+Main:
+yield
+jal HandleGFG
+jal HandleSterling
+j Main
+
+HandleGFG:
+l GFGTemp GFGSensor Temperature
+sge GFGAboveTemp GFGTemp TargetTemp
+s GFGIn On GFGAboveTemp
+s GFGOut On GFGAboveTemp
+j ra
+
+HandleSterling:
+l SterlingTemp SterlingSensor Temperature
+sge SterlingAboveTemp SterlingTemp TargetTemp
+s SterlingIn On SterlingAboveTemp
+s SterlingOut On SterlingAboveTemp
+j ra
+
+</Instructions>
+</InstructionData>
