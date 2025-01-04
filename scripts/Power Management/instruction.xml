@@ -10,8 +10,7 @@
 alias Self db
 # alias CablePowIn d0
 # alias CablePowOut d1
-alias DaySensor d2
-alias AdjustmentDial d3
+# alias DaySensor d2 
 
 # Capacity
 alias PowerInputAmt r0
@@ -22,21 +21,25 @@ alias HorizontalAngle r2
 alias VerticalAngle r3
 alias AdjustedHorizontalAngle r4
 alias AdjustedVerticalAngle r5
-alias AdjustmentValue r6
 
 # PID
-alias Error r7 # Also used as Proportional
+alias Error r6
 alias Proportional r7
 alias PreviousError r8
 alias Integral r9
 alias Derivative r10
 alias Setpoint r11
-alias CurrentGeneratorOutput r12
+alias Output r12
+
+alias CurrentGeneratorOutput r13
 
 define Time 1
 define ProportionalGain 1
 define IntegralGain 1
 define DerivativeGain 1
+
+define PressureMin 0
+define PressureMax 30000
 
 define PanelHorizontalOffset 180
 define PanelVerticalOffset 90
@@ -44,10 +47,13 @@ define PanelVerticalOffset 90
 define CableAnalyzerHash HASH("StructureCableAnalysizer")
 define CableAnalyzerIn HASH("Cable Analyzer - Power In")
 define CableAnalyzerOut HASH("Cable Analyzer - Power Out")
+define DaySensorHash HASH("StructureDaylightSensor")
 define MediumLEDHash HASH("StructureConsoleLED1x2")
 define PowerInLED HASH("LED - Power In")
 define PowerOutLED HASH("LED - Power Out")
 define GasFuelGenerator HASH("StructureGasGenerator")
+define VolumePump HASH("StructureVolumePump")
+define GFGPump HASH("Volume Pump - GFG")
 define SolarPanelHash HASH("StructureSolarPanelDual")
 
 define PowerMode 2
@@ -57,6 +63,8 @@ sbn MediumLEDHash PowerInLED Mode PowerMode
 sbn MediumLEDHash PowerInLED Color Color.Green
 sbn MediumLEDHash PowerOutLED Mode PowerMode
 sbn MediumLEDHash PowerOutLED Color Color.Red
+move PreviousError 0
+move Integral 0
 
 Main:
 yield
@@ -75,9 +83,8 @@ lbn PowerOutputAmt CableAnalyzerHash CableAnalyzerOut PowerActual 0
 sbn MediumLEDHash PowerOutLED Setting PowerOutputAmt
 
 HandleSolar:
-l AdjustmentValue AdjustmentDial Setting
-l HorizontalAngle DaySensor Horizontal
-l VerticalAngle DaySensor Vertical
+lb HorizontalAngle DaySensorHash Horizontal Maximum
+lb VerticalAngle DaySensorHash Vertical Maximum
 add AdjustedHorizontalAngle HorizontalAngle PanelHorizontalOffset
 sub AdjustedVerticalAngle PanelVerticalOffset VerticalAngle
 sb SolarPanelHash Horizontal AdjustedHorizontalAngle
@@ -85,20 +92,22 @@ sb SolarPanelHash Vertical AdjustedVerticalAngle
 j ra
 
 HandleFuelGenerator:
-lb CurrentGeneratorOutput
-# setpoint =  input - output + current_amt
-
-
-previous_error := 0
-integral := 0
-loop:
-   error := setpoint − measured_value
-   proportional := error;
-   integral := integral + error × dt
-   derivative := (error - previous_error) / dt
-   output := Kp × proportional + Ki × integral + Kd × derivative
-   previous_error := error
-   wait(dt)
-   goto loop
+lb CurrentGeneratorOutput FuelGeneratorHash PowerGeneration Sum
+sub Setpoint PowerOutputAmt PowerInputAmt
+add Setpoint Setpoint CurrentGeneratorOutput
+sub Error Setpoint CurrentGeneratorOutput
+move Proportional Error
+mul Proportional Proportional ProportionalGain
+add Integral Integral Error
+mul Integral Integral Time
+mul Integral Integral IntegralGain
+sub Derivative Error PreviousError
+mul Derivative Derivative Time
+mul Derivative Derivative DerivativeGain
+add Output Proportional Integral
+add Ouput Output Derivative
+move PreviousError Error
+sbn VolumePump GFGPump Setting Output
+j ra
 </Instructions>
 </InstructionData>
