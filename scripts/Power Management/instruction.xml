@@ -34,7 +34,7 @@ alias CurrentGeneratorOutput r13
 alias WaitTime r14
 
 
-define PIDTime 3
+define PIDTime 1
 define ProportionalGain 0.01
 define IntegralGain 0.01
 define DerivativeGain 0.1
@@ -55,17 +55,23 @@ define PowerOutLED HASH("LED - Power Out")
 define GasFuelGenerator HASH("StructureGasGenerator")
 define VolumePump HASH("StructureVolumePump")
 define GFGPump HASH("Volume Pump - GFG")
+define PressureRegulator HASH("StructurePressureRegulator")
+define GFGRegulator HASH("Pressure Regulator - GFG")
 define SolarPanelHash HASH("StructureSolarPanelDual")
 
 define PowerMode 2
 
 Init:
+s Self Setting 0
 sbn MediumLEDHash PowerInLED Mode PowerMode
 sbn MediumLEDHash PowerInLED Color Color.Green
 sbn MediumLEDHash PowerOutLED Mode PowerMode
 sbn MediumLEDHash PowerOutLED Color Color.Red
-sbn VolumePump GFGPump On 1
-move WaitTime PID Time
+sbn PressureRegulator GFGRegulator On 1
+sbn VolumePump GFGPump On 0
+
+sb GasFuelGenerator On 1
+move WaitTime 0
 move PreviousError 0
 move Integral 0
 
@@ -94,13 +100,14 @@ j ra
 
 HandleFuelGenerator:
 sub WaitTime WaitTime TickLength
+j UpdatePID
 brlez WaitTime UpdatePID
 j ra
 
 UpdatePID:
 move WaitTime PIDTime
-lb CurrentGeneratorOutput GasFuelGenerator PowerGeneration Sum
 sb GasFuelGenerator On 1
+lb CurrentGeneratorOutput GasFuelGenerator PowerGeneration Sum
 sub Setpoint PowerOutputAmt PowerInputAmt
 add Setpoint Setpoint CurrentGeneratorOutput
 sub PIDError Setpoint CurrentGeneratorOutput
@@ -114,9 +121,10 @@ mul Derivative Derivative PIDTime
 mul Derivative Derivative DerivativeGain
 add PIDOutput Proportional Integral
 add PIDOutput PIDOutput Derivative
-div PIDOutput PIDOutput BaseOutput
+#div PIDOutput PIDOutput BaseOutput
 s Self Setting PIDOutput
 move PreviousError PIDError
-sbn VolumePump GFGPump Setting PIDOutput
+#sbn VolumePump GFGPump Setting PIDOutput
+sbn PressureRegulator GFGRegulator Setting PIDOutput
 j ra</Instructions>
 </InstructionData>
