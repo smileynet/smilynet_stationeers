@@ -6,7 +6,8 @@
   <Description>Handles storm related notification systems​</Description>
   <Author>SMiLeY.NET</Author>
   <WorkshopFileHandle>0</WorkshopFileHandle>
-  <Instructions>alias Self db
+  <Instructions>### Storm Warning ###
+alias Self db
 
 alias StormState r1
 alias StormCountdown r2

@@ -1,0 +1,221 @@
+#############################################################################
+# DYNAMIC SUNRISE/SUNSET DETECTION + COUNTDOWN
+#############################################################################
+
+alias Self db
+
+# ---------------------------
+# REGISTERS FOR DETECTION
+# ---------------------------
+alias CurrentIrradiance     r0
+alias PreviousIrradiance    r1
+alias CurrentVertAngle      r2
+alias CurrentHorizAngle     r3
+
+# We'll store discovered angles here:
+alias SunriseVertAngle      r4
+alias SunriseHorizAngle     r5
+alias SunsetVertAngle       r6
+alias SunsetHorizAngle      r7
+
+# We also track the states:
+alias DayNightState         r8      # 0=unknown, 1=currently day, 2=currently night
+alias SunriseSunsetState    r9      # 0=not found angles yet, 1=found sunrise, 2=found both
+
+# Time and countdowns:
+alias LastTickTime          r10     # track seconds between ticks
+alias CurrentCycleTime      r11     # how many seconds into day or night we are
+alias NextEventCountDown    r12     # how many seconds until next sunrise or sunset
+
+# Durations:
+alias DayDuration           r13     # measured from sunrise->sunset
+alias NightDuration         r14     # measured from sunset->sunrise
+
+# We'll store the time we cross sunrise or sunset:
+alias LastEventTime         r15
+
+# TEMP registers
+alias Temp                  r16
+alias Temp2                 r17
+
+# ---------------------------
+# CONSTANTS
+# ---------------------------
+define DayThreshold 10      # W/m² to detect day vs. night
+define LEDHash      HASH("StructureConsoleLED5")
+define LEDSetting   HASH("LED - SunCountdown")
+define DaySensor    HASH("StructureDaylightSensor")
+
+# Each script cycle ~2s in Stationeers, or you might do "sleep 10" => dt=10
+define TICK_SECONDS 10
+
+# Our finite-state approach:
+# DayNightState:  0=unknown, 1=day, 2=night
+# SunriseSunsetState: 0=no angles known, 1=sunrise known, 2=sunrise+sunset known
+
+#############################################################################
+# INIT
+#############################################################################
+Init:
+  move PreviousIrradiance 0
+  move DayNightState 0         # unknown
+  move SunriseSunsetState 0
+  move DayDuration 600         # placeholder guess
+  move NightDuration 600       # placeholder guess
+  move LastEventTime 0
+  move CurrentCycleTime 0
+  move NextEventCountDown 0
+  j Main
+
+#############################################################################
+# MAIN LOOP
+#############################################################################
+Main:
+  yield
+
+  # Example: read sensor
+  lb CurrentIrradiance DaySensor SolarIrradiance Maximum
+  lb CurrentVertAngle  DaySensor Vertical        Maximum
+  lb CurrentHorizAngle DaySensor Horizontal      Maximum
+
+  # 1) Determine dt since last tick
+  move LastTickTime TICK_SECONDS
+
+  # 2) Update day/night state if crossing threshold
+  jal DetectDayNightChange
+
+  # 3) If we have partial or full knowledge of sunrise/sunset angles, update times
+  jal UpdateSunCountdown
+
+  # 4) Display countdown
+  sbn LEDHash LEDSetting Setting NextEventCountDown
+
+  # 5) Save for next loop
+  move PreviousIrradiance CurrentIrradiance
+
+  # Sleep (simulate each pass = 10s)
+  sleep TICK_SECONDS
+  j Main
+
+#############################################################################
+# DETECT DAY/NIGHT CROSSING (IRRADIANCE-BASED)
+#############################################################################
+DetectDayNightChange:
+  # We'll see if we crossed from night->day or day->night by looking at threshold
+  alias oldState r20
+  move oldState DayNightState
+
+  # If CurrentIrradiance >= DayThreshold => day
+  blt CurrentIrradiance DayThreshold IsNight
+  # => day
+  move DayNightState 1
+  j CheckTransition
+
+IsNight:
+  # => night
+  move DayNightState 2
+
+CheckTransition:
+  beq oldState DayNightState NoChange   # no crossing
+
+  # We have a crossing
+  # If oldState=2 -> dayNightState=1 => sunrise
+  # If oldState=1 -> dayNightState=2 => sunset
+  alias crossingTime r21
+  move crossingTime CurrentCycleTime
+
+  # This crossingTime is how many seconds into the current day or night we had so far
+  # We also have LastEventTime from previous sunrise or sunset
+  # We can measure the length of the last day or night
+
+  beq oldState 1 DidSunset
+  beq oldState 2 DidSunrise
+  j NoChange
+
+DidSunrise:
+  # means we just crossed from night->day
+  # measure night length if SunriseSunsetState=2 (we had angles)
+  alias lastNight r22
+  sub lastNight CurrentCycleTime LastEventTime
+  bne SunriseSunsetState 2 SkipNightMeasurement
+  move NightDuration lastNight
+SkipNightMeasurement:
+
+  # store angles if not known
+  beq SunriseSunsetState 0 RecordSunriseAngles
+  beq SunriseSunsetState 1 UpdateSunriseAngles
+  j CrossingDone
+
+RecordSunriseAngles:
+  # We had no angles known, so this is our first sunrise detection
+  move SunriseVertAngle  CurrentVertAngle
+  move SunriseHorizAngle CurrentHorizAngle
+  move SunriseSunsetState 1
+  j CrossingDone
+
+UpdateSunriseAngles:
+  # We already had sunrise, but not sunset (?), or we are re-measuring.
+  move SunriseVertAngle  CurrentVertAngle
+  move SunriseHorizAngle CurrentHorizAngle
+  j CrossingDone
+
+DidSunset:
+  # means we just crossed day->night
+  alias lastDay r23
+  sub lastDay CurrentCycleTime LastEventTime
+  bne SunriseSunsetState 2 SkipDayMeasurement
+  move DayDuration lastDay
+SkipDayMeasurement:
+
+  # store angles if we have sunrise but not yet sunset
+  beq SunriseSunsetState 1 RecordSunsetAngles
+  j CrossingDone
+
+RecordSunsetAngles:
+  move SunsetVertAngle  CurrentVertAngle
+  move SunsetHorizAngle CurrentHorizAngle
+  move SunriseSunsetState 2
+  j CrossingDone
+
+CrossingDone:
+  # update LastEventTime
+  move LastEventTime CurrentCycleTime
+NoChange:
+  j ra
+
+#############################################################################
+# UPDATE SUN COUNTDOWN
+#############################################################################
+UpdateSunCountdown:
+  # We'll accumulate time
+  add CurrentCycleTime CurrentCycleTime LastTickTime
+
+  # If we haven't discovered sunrise or sunset angles yet, we can't do a real countdown
+  blt SunriseSunsetState 2 NoCountdown
+
+  # If DayNightState=1 => we are in day => next event is sunset
+  # time left = DayDuration - (currentCycleTime - lastEventTime)
+  alias timeSince r30
+  sub timeSince CurrentCycleTime LastEventTime
+  beq DayNightState 1 CalcSunset
+  j CalcSunrise
+
+CalcSunset:
+  sub NextEventCountDown DayDuration timeSince
+  j CheckClamp
+
+CalcSunrise:
+  sub NextEventCountDown NightDuration timeSince
+  j CheckClamp
+
+CheckClamp:
+  bltz NextEventCountDown ZeroIt
+  j ra
+
+ZeroIt:
+  move NextEventCountDown 0
+  j ra
+
+NoCountdown:
+  move NextEventCountDown 0
+  j ra
