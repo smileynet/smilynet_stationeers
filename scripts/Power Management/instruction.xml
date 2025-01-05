@@ -8,70 +8,76 @@
   <WorkshopFileHandle>0</WorkshopFileHandle>
   <Instructions>### Power Management ###
 alias Self db
-# alias CablePowIn d0
-# alias CablePowOut d1
-# alias DaySensor d2
 
-# Capacity
-alias PowerInputAmt r0
-alias PowerOutputAmt r1
+alias PowerInputAmt r0       # from Cable Analyzer In
+alias PowerOutputAmt r1      # from Cable Analyzer Out
 
-# Solar
+# Solar tracking
 alias HorizontalAngle r2
 alias VerticalAngle r3
 alias AdjustedHorizontalAngle r4
 alias AdjustedVerticalAngle r5
 
-# PID
+# Gas Fuel Generator PID
 alias PIDError r6
 alias Proportional r7
 alias PreviousError r8
 alias Integral r9
 alias Derivative r10
 alias Setpoint r11
-alias PIDOutput r12
-alias CurrentGeneratorOutput r13
-alias WaitTime r14
+alias PIDOutput_kW r12
+alias CurrentGenerator_kW r13
+alias Temp r14
+alias RegulatorPressure r15
+alias GeneratorActive r16
 
+# Gains -- tune as needed
+define Kp 0.4 # Proportional Gain
+define Ki 0.01 # Integral Gain
+define Kd 0.0 # Derivative Gain
 
-define PIDTime 1
-define ProportionalGain 0.01
-define IntegralGain 0.01
-define DerivativeGain 0.1
+# Each script run (per tick) is 0.5 seconds
+define DeltaT 0.5
 
-define TickLength 0.5
-define BaseOutput 1300
+# Generator output range (kW)
+define MaxGeneratorKw 12.5
 
-define PanelHorizontalOffset 180
-define PanelVerticalOffset 90
+# Fuel pressure range (kPa) - [0..100]
+define MaxFuelPressure 100.0
 
-define CableAnalyzerHash HASH("StructureCableAnalysizer")
-define CableAnalyzerIn HASH("Cable Analyzer - Power In")
-define CableAnalyzerOut HASH("Cable Analyzer - Power Out")
-define DaySensorHash HASH("StructureDaylightSensor")
-define MediumLEDHash HASH("StructureConsoleLED1x2")
-define PowerInLED HASH("LED - Power In")
-define PowerOutLED HASH("LED - Power Out")
-define GasFuelGenerator HASH("StructureGasGenerator")
-define VolumePump HASH("StructureVolumePump")
-define GFGPump HASH("Volume Pump - GFG")
-define PressureRegulator HASH("StructurePressureRegulator")
-define GFGRegulator HASH("Pressure Regulator - GFG")
-define SolarPanelHash HASH("StructureSolarPanelDual")
+# Integral windup clamp
+define MaxIntegral 50   # somewhat arbitrary- tune to system
+define MinIntegral -50
 
+# Device Hashes
+define CableAnalyzerHash  HASH("StructureCableAnalysizer")
+define CableAnalyzerIn    HASH("Cable Analyzer - Power In")
+define CableAnalyzerOut   HASH("Cable Analyzer - Power Out")
+define DaySensorHash      HASH("StructureDaylightSensor")
+define MediumLEDHash      HASH("StructureConsoleLED1x2")
+define PowerInLED         HASH("LED - Power In")
+define PowerOutLED        HASH("LED - Power Out")
+define GasFuelGenerator   HASH("StructureGasGenerator")
+define VolumePump         HASH("StructureVolumePump")
+define GFGPump            HASH("Volume Pump - GFG")
+define SolarPanelHash     HASH("StructureSolarPanelDual")
+
+# For LED display mode, etc.
 define PowerMode 2
 
+# Offsets for Solar Panel
+define PanelHorizontalOffset 180
+define PanelVerticalOffset   90
+
 Init:
-s Self Setting 0
-sbn MediumLEDHash PowerInLED Mode PowerMode
-sbn MediumLEDHash PowerInLED Color Color.Green
+sbn MediumLEDHash PowerInLED  Mode PowerMode
+sbn MediumLEDHash PowerInLED  Color Color.Green
+
 sbn MediumLEDHash PowerOutLED Mode PowerMode
 sbn MediumLEDHash PowerOutLED Color Color.Red
-sbn PressureRegulator GFGRegulator On 1
-sbn VolumePump GFGPump On 0
 
-sb GasFuelGenerator On 1
-move WaitTime 0
+sbn VolumePump GFGPump On 1
+
 move PreviousError 0
 move Integral 0
 
@@ -83,48 +89,84 @@ jal HandleFuelGenerator
 j Main
 
 HandlePowerConsumption:
-lbn PowerInputAmt CableAnalyzerHash CableAnalyzerIn PowerActual Maximum
-sbn MediumLEDHash PowerInLED Setting PowerInputAmt
+lbn PowerInputAmt  CableAnalyzerHash CableAnalyzerIn  PowerActual Maximum
+sbn MediumLEDHash   PowerInLED       Setting          PowerInputAmt
+
 lbn PowerOutputAmt CableAnalyzerHash CableAnalyzerOut PowerActual Maximum
-sbn MediumLEDHash PowerOutLED Setting PowerOutputAmt
+sbn MediumLEDHash  PowerOutLED       Setting          PowerOutputAmt
 j ra
 
 HandleSolar:
 lb HorizontalAngle DaySensorHash Horizontal Maximum
-lb VerticalAngle DaySensorHash Vertical Maximum
+lb VerticalAngle   DaySensorHash Vertical   Maximum
+
 add AdjustedHorizontalAngle HorizontalAngle PanelHorizontalOffset
-sub AdjustedVerticalAngle PanelVerticalOffset VerticalAngle
+sub AdjustedVerticalAngle   PanelVerticalOffset VerticalAngle
+
 sb SolarPanelHash Horizontal AdjustedHorizontalAngle
-sb SolarPanelHash Vertical AdjustedVerticalAngle
+sb SolarPanelHash Vertical   AdjustedVerticalAngle
 j ra
 
 HandleFuelGenerator:
-sub WaitTime WaitTime TickLength
-j UpdatePID
-brlez WaitTime UpdatePID
-j ra
+Read the current generator output (in W).
+lb CurrentGenerator_kW GasFuelGenerator PowerGeneration Sum
 
-UpdatePID:
-move WaitTime PIDTime
-sb GasFuelGenerator On 1
-lb CurrentGeneratorOutput GasFuelGenerator PowerGeneration Sum
+#Convert generator output to kW
+div CurrentGenerator_kW CurrentGeneratorW 1000
+
+#Compute setpoint = (PowerOutput - PowerInput) in W
 sub Setpoint PowerOutputAmt PowerInputAmt
-add Setpoint Setpoint CurrentGeneratorOutput
-sub PIDError Setpoint CurrentGeneratorOutput
+
+#Convert to kW.
+div Setpoint Setpoint 1000
+
+# Error = setpoint - actual
+sub PIDError Setpoint CurrentGenerator_kW
+
+# ----- PROPORTIONAL -----
 move Proportional PIDError
-mul Proportional Proportional ProportionalGain
-add Integral Integral PIDError
-mul Integral Integral PIDTime
-mul Integral Integral IntegralGain
+mul Proportional Proportional Kp
+
+# ----- INTEGRAL -----
+# I = I + (Ki * e * dt)
+mul Temp PIDError Ki
+mul Temp Temp DeltaT
+add Integral Integral Temp
+
+# --- clamp integral to prevent windup ---
+min Integral MaxIntegral Integral
+max Integral MinIntegral Integral
+
+# ----- DERIVATIVE -----
+# D = Kd * (e - e_old) / dt
 sub Derivative PIDError PreviousError
-mul Derivative Derivative PIDTime
-mul Derivative Derivative DerivativeGain
-add PIDOutput Proportional Integral
-add PIDOutput PIDOutput Derivative
-#div PIDOutput PIDOutput BaseOutput
-s Self Setting PIDOutput
+div Derivative Derivative DeltaT
+mul Derivative Derivative Kd
+
+# ----- SUM PID TERMS -----
+move PIDOutput_kW Proportional
+add PIDOutput_kW PIDOutput_kW Integral
+add PIDOutput_kW PIDOutput_kW Derivative
+
+# Clamp final generator request to [0..12.5] kW
+min PIDOutput_kW MaxGeneratorKw PIDOutput_kW
+max PIDOutput_kW 0 PIDOutput_kW
+
+# Map kW => pressure [0..100]
+# Pressure = (PIDOutput_kW / 12.5) * 100
+mul RegulatorPressure PIDOutput_kW MaxFuelPressure
+div RegulatorPressure RegulatorPressure MaxGeneratorKw
+
+# Update pressure regulator (pump) setting
+sbn VolumePump GFGPump Setting RegulatorPressure
+
+# Disable generator if not needed
+sgez GeneratorActive RegulatorPressure
+sb GasFuelGenerator On GeneratorActive
+
+# Save error for next iteration
 move PreviousError PIDError
-#sbn VolumePump GFGPump Setting PIDOutput
-sbn PressureRegulator GFGRegulator Setting PIDOutput
-j ra</Instructions>
+
+j ra
+  </Instructions>
 </InstructionData>
