@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133805841634772009</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Satellite Controller Example</Title>
+  <Description>By CowsAreEvil​</Description>
+  <Author>Unknown</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions># Satellite dish controller    CowsAreEvil
+# Will scan the sky for traders and interrogate
+alias dish d0 #Small, medium or large dish
+alias light d1 #LED
+alias dial d2 #Optional for eTrade
+alias stepv r5
+alias steph r6
+alias strength r7
+alias newstrength r8
+alias trader r10
+alias traderID r11
+move stepv 1
+move steph 1
+
+push 0
+push -1374574351 #Ore
+push 1325142661 #Tools
+push -470575659 #Gas
+push -1590718013 #Appliances
+push 135244511 #Liquids
+push -1650376125 #Food and Stuff
+push -1077922067 #Seeds
+push 54412100 #Alloys
+push 175935584 #Construction Supplies
+push -82964957 #Food
+
+brdns dial 2
+s dial Mode 10
+# Scan the sky for contacts
+seek:
+s dish BestContactFilter -1
+s light Color Color.Green
+sleep 5
+l traderID dish SignalID
+move sp 0
+brdns dial 2
+l sp dial Setting
+add sp sp 1
+peek trader
+l strength dish SignalStrength
+sgtz r0 strength #is signal found
+l r1 dish InterrogationProgress
+slez r1 r1 #has it not been contacted
+and r0 r0 r1
+l r1 dish ContactTypeId
+breqz trader 3 #is a trader type selected
+seq r1 r1 trader
+and r0 r0 r1
+bgtz r0 htrack #contact found
+#still here then nothing found
+movedish:
+l r0 dish Horizontal
+add r0 r0 30
+s dish Horizontal r0
+blt r0 360 wait
+l r0 dish Vertical
+add r0 r0 15
+brlt r0 90 2
+move r0 15
+s dish Vertical r0
+wait:
+yield
+l r0 dish Idle
+beqz r0 wait
+j seek
+#Contact found. Aim dish horizontal
+htrack:
+s dish BestContactFilter traderID
+s light Color Color.Blue
+l r0 dish MinimumWattsToContact
+l r1 dish WattsReachingContact
+blt r0 r1 contact #Contact possible
+l r1 dish Setting
+bgt r0 r1 movedish #Not enough power give up
+l r0 dish Horizontal
+div r1 strength 4
+mul r1 r1 steph
+add r0 r0 r1
+s dish Horizontal r0
+hwait:
+yield
+l r0 dish InterrogationProgress
+bgtz r0 seek #already found
+l r0 dish SignalID
+breq r0 -1 seek #trader gone
+l newstrength dish SignalStrength
+beq newstrength -1 hwait #wait for signal
+sle r0 newstrength strength
+move strength newstrength
+beq r0 1 vtrack
+mul steph steph -1
+j htrack
+#Contact found. aim dish vertical
+vtrack:
+l r0 dish Vertical
+div r1 strength 4
+mul r1 r1 stepv
+add r0 r0 r1
+s dish Vertical r0
+vwait:
+yield
+l r0 dish SignalID
+breq r0 -1 seek
+l newstrength dish SignalStrength
+beq newstrength -1 vwait
+sle r0 newstrength strength
+move strength newstrength
+beq r0 1 htrack
+mul stepv stepv -1
+j vtrack
+#Within contact range so make contact
+contact:
+s light Color Color.White
+yield
+s dish Activate 1
+interrogate:
+yield
+l r0 dish SignalID
+beq r0 -1 seek #contact gone
+l r0 dish InterrogationProgress
+bne r0 1 interrogate
+l r0 db Setting
+add r0 r0 1
+s db Setting r0
+j seek</Instructions>
+</InstructionData>
