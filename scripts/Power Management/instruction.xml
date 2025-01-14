@@ -78,9 +78,9 @@ sb SolarPanelHash Horizontal AdjustedHorizontalAngle
 sb SolarPanelHash Vertical   AdjustedVerticalAngle
 j ra
 
-NightLights:
+HandleNightLights:
 lb CurrentIrradiance DaySensorHash SolarIrradiance Maximum
-s self Setting CurrentIrradiance
+s Self Setting CurrentIrradiance
 # TODO: Handle lights
 j ra
 
