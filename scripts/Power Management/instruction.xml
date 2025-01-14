@@ -27,7 +27,7 @@ define CableAnalyzerHash  HASH("StructureCableAnalysizer")
 define CableAnalyzerIn    HASH("Cable Analyzer - Power In")
 define CableAnalyzerOut   HASH("Cable Analyzer - Power Out")
 define StationBatteryHash HASH("StructureBattery")
-define SolidGeneratorHash HASH(StructureSolidFuelGenerator")
+define SolidGeneratorHash HASH("StructureSolidFuelGenerator")
 define MediumLEDHash      HASH("StructureConsoleLED1x2")
 define PowerInLED         HASH("LED - Power In")
 define PowerOutLED        HASH("LED - Power Out")
@@ -80,12 +80,13 @@ j ra
 
 HandleNightLights:
 lb CurrentIrradiance DaySensorHash SolarIrradiance Maximum
-s Self Setting CurrentIrradiance
+#s Self Setting CurrentIrradiance
 # TODO: Handle lights
 j ra
 
 HandleBackupPower:
 lb CurrentBatteryRatio StationBatteryHash Ratio Average
+s Self Setting CurrentBatteryRatio
 blt CurrentBatteryRatio MinBatteryRatio EnableBackupPower
 bgt CurrentBatteryRatio MaxBatteryRatio DisableBackupPower
 j ra
@@ -96,7 +97,5 @@ j ra
 
 DisableBackupPower:
 sb SolidGeneratorHash On 0
-j ra
-
-  </Instructions>
+j ra</Instructions>
 </InstructionData>
