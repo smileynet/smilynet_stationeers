@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133814293327457532</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Hydroponics Gas Filtration</Title>
+  <Description>For filtration unit to inject CO2 &amp; Nitrogen​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>### Filtration Handler ###
+alias Self db
+alias GasSensor d0
+
+alias CurrentCO2Amount r0
+alias CurrentNitrogenAmount r1
+alias NeedGas r2
+# TODO: Implement filter checking
+
+
+define MinC02Ratio 0.5
+define MinNitrogenRatio 0.5
+define Idle 0
+define Active 1
+
+
+Reset:
+s Self Mode Idle
+j Main
+
+Main:
+yield
+move NeedGas 0
+l CurrentCO2Amount GasSensor RatioCarbonDioxide
+l CurrentNitrogenAmount GasSensor RatioNitrogen
+slt NeedGas CurrentCO2Amount MinC02Ratio
+slt NeedGas CurrentNitrogenAmount MinNitrogenRatio
+bgtz NeedGas DoFiltration
+j Reset
+
+DoFiltration:
+s Self Mode Active
+j Main</Instructions>
+</InstructionData>
