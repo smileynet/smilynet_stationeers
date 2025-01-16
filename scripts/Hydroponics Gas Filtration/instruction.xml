@@ -6,7 +6,7 @@
   <Description>For filtration unit to inject CO2 &amp; Nitrogen​</Description>
   <Author>SMiLeY.NET</Author>
   <WorkshopFileHandle>0</WorkshopFileHandle>
-  <Instructions>### Filtration Handler ###
+  <Instructions>### Hydroponics Filtration Handler ###
 alias Self db
 alias GasSensor d0
 
@@ -16,21 +16,31 @@ alias NeedGas r2
 # TODO: Implement filter checking
 
 
-define MinC02Ratio 0.5
-define MinNitrogenRatio 0.5
+define MinC02Ratio 0.05
+define MinNitrogenRatio 0.05
 define Idle 0
 define Active 1
+define PercentageMode 1
 
+define SmallLEDHash HASH("StructureConsoleLED5")
+define CO2LED HASH("LED - CO2")
+define NitrogenLED HASH("LED - Nitrogen")
 
 Reset:
 s Self Mode Idle
+sbn SmallLEDHash CO2LED  Mode PercentageMode
+sbn SmallLEDHash CO2LED  Color Color.Gray
+sbn SmallLEDHash NitrogenLED  Mode PercentageMode
+sbn SmallLEDHash NitrogenLED  Color Color.Green
 j Main
 
 Main:
 yield
 move NeedGas 0
 l CurrentCO2Amount GasSensor RatioCarbonDioxide
+sbn SmallLEDHash CO2LED  Setting CurrentCO2Amount
 l CurrentNitrogenAmount GasSensor RatioNitrogen
+sbn SmallLEDHash NitrogenLED  Setting CurrentNitrogenAmount
 slt NeedGas CurrentCO2Amount MinC02Ratio
 slt NeedGas CurrentNitrogenAmount MinNitrogenRatio
 bgtz NeedGas DoFiltration
