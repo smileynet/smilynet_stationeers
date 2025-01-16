@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133815132402369428</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Harvie Controller</Title>
+  <Description>Script to control Harvie and Hydroponic devices​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>### Hydroponic Farming Script ###
+alias Self                db
+alias GrowthState         r0   # Growth state from Hydroponic
+alias HarvieActivateState r1
+alias Temp                r2
+
+define HydroponicsHash HASH("StructureHydroponicsTrayData")
+define HarvieHash      HASH("StructureHarvie")
+
+define Group1 HASH("Group 1")
+
+define HydroSlotPlant 0  # Hydroponic "Plant" slot index
+# Growth parameter is "Growth"
+
+# Harvie "Activate" states:
+#   0 = Idle
+#   1 = Planting
+#   2 = Harvesting
+
+# Growth State from Hydro slot can be:
+#   -1: Empty
+#    0..4: Growing / Mature
+#    5: Seeding
+
+Main:
+yield
+jal HandleFarming
+j Main
+
+HandleFarming:
+lbns GrowthState HydroponicsHash Group1 HydroSlotPlant Growth Maximum
+s Self Setting GrowthState
+beq GrowthState -1 DoPlant
+beq GrowthState 5 DoHarvest
+j FarmingDone
+
+DoPlant:
+sbn HarvieHash Group1 Plant 1
+j FarmingDone
+
+DoHarvest:
+sbn HarvieHash Group1 Harvest 1
+j FarmingDone
+
+FarmingDone:
+sleep 5
+j ra</Instructions>
+</InstructionData>
