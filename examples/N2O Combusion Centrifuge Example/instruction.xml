@@ -1,13 +1,12 @@
-Centrifuge<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <DateTime>133787581508843940</DateTime>
+  <DateTime>133815147212189866</DateTime>
   <GameVersion>0.2.5370.24111</GameVersion>
-  <Title>Combustion Centerfuge</Title>
-  <Description>​</Description>
+  <Title>N2O Combusion Centrifuge Example</Title>
+  <Description>By Suge​</Description>
   <Author>SMiLeY.NET</Author>
   <WorkshopFileHandle>0</WorkshopFileHandle>
-  <Instructions>### N2OH Combustion Centerfuge ###
-alias Centrifuge d0
+  <Instructions>alias Cenrifuge d0
 alias CurrentReagents r0
 alias CurrentRPM r1
 alias CurrentStress r2
@@ -25,32 +24,32 @@ define MaxTransRPM 1000 #1000+ max speed
 define MaxReagents 2500
 define MinReagents 2
 preStart:
-l CurrentRPM Centrifuge Rpm
+l CurrentRPM d0 Rpm
 bgt CurrentRPM MedTransRPM main
-s Centrifuge On 0
-s Centrifuge Throttle 0
-s Centrifuge CombustionLimiter 0
+s d0 On 0
+s d0 Throttle 0
+s d0 CombustionLimiter 0
 blt CurrentRPM MinRPM checkReagents
 j preStart
 checkReagents:
-l CurrentReagents Centrifuge Reagents
+l CurrentReagents d0 Reagents
 blt CurrentReagents MinReagents close
 bgt CurrentReagents MinReagents empty
 j checkReagents
 empty:
-s Centrifuge Open 1
+s d0 Open 1
 j checkReagents
 close:
-s Centrifuge Open 0
-s Centrifuge On 1
-l CurrentStress Centrifuge Stress
+s d0 Open 0
+s d0 On 1
+l CurrentStress d0 Stress
 bnez CurrentStress close
 j main
 main:
-l CurrentStress Centrifuge Stress
-l CurrentRPM Centrifuge Rpm
-l CurrentReagents Centrifuge Reagents
-l OnOff Centrifuge On
+l CurrentStress d0 Stress
+l CurrentRPM d0 Rpm
+l CurrentReagents d0 Reagents
+l OnOff d0 On
 beqz OnOff spinDown
 bgt CurrentStress MaxStress spinDown
 bgt CurrentReagents MaxReagents spinDown
@@ -61,72 +60,72 @@ blt CurrentRPM MaxTransRPM higherSpeed # less 1000
 bgt CurrentRPM MaxTransRPM maxSpeed #1000+
 j main
 lowSpeed:
-l CurrentStress Centrifuge Stress
+l CurrentStress d0 Stress
 bgt CurrentStress LowStress pulseSlow
-s Centrifuge On 1
-s Centrifuge Open 0
-s Centrifuge Throttle 10
-s Centrifuge CombustionLimiter 10
+s d0 On 1
+s d0 Open 0
+s d0 Throttle 10
+s d0 CombustionLimiter 10
 sleep 2
-s Centrifuge Throttle 0
-s Centrifuge CombustionLimiter 0
+s d0 Throttle 0
+s d0 CombustionLimiter 0
 sleep 2
 j main
 medSpeed:
-l CurrentStress Centrifuge Stress
+l CurrentStress d0 Stress
 bgt CurrentStress MedStress pulseSlow
-s Centrifuge Throttle 20
-s Centrifuge CombustionLimiter 20
+s d0 Throttle 20
+s d0 CombustionLimiter 20
 sleep 2
-s Centrifuge Throttle 10
-s Centrifuge CombustionLimiter 10
+s d0 Throttle 10
+s d0 CombustionLimiter 10
 sleep 2
 yield
 j main
 highSpeed:
-l CurrentStress Centrifuge Stress
+l CurrentStress d0 Stress
 bgt CurrentStress HigherStress pause
-s Centrifuge Throttle 30
-s Centrifuge CombustionLimiter 30
+s d0 Throttle 30
+s d0 CombustionLimiter 30
 sleep 2
-s Centrifuge Throttle 20
-s Centrifuge CombustionLimiter 20
+s d0 Throttle 20
+s d0 CombustionLimiter 20
 sleep 2
 j main
 higherSpeed:
-l CurrentStress Centrifuge Stress
+l CurrentStress d0 Stress
 bgt CurrentStress HighStress highSpeed
-s Centrifuge Throttle 60
-s Centrifuge CombustionLimiter 60
+s d0 Throttle 60
+s d0 CombustionLimiter 60
 sleep 2
-s Centrifuge Throttle 40
-s Centrifuge CombustionLimiter 40
+s d0 Throttle 40
+s d0 CombustionLimiter 40
 sleep 1
 j main
 maxSpeed:
-s Centrifuge Throttle 80
-s Centrifuge CombustionLimiter 80
+s d0 Throttle 80
+s d0 CombustionLimiter 80
 j main
 pulseSlow:
-s Centrifuge Throttle 0
-s Centrifuge CombustionLimiter 0
+s d0 Throttle 0
+s d0 CombustionLimiter 0
 sleep 4
-s Centrifuge Throttle 10
-s Centrifuge CombustionLimiter 10
+s d0 Throttle 10
+s d0 CombustionLimiter 10
 sleep 1
-l CurrentStress Centrifuge Stress
-l CurrentRPM Centrifuge Rpm
+l CurrentStress d0 Stress
+l CurrentRPM d0 Rpm
 blt CurrentStress LowStress main
 blt CurrentRPM MinRPM preStart
 j main
 pause:
-s Centrifuge Throttle 0
-s Centrifuge CombustionLimiter 0
+s d0 Throttle 0
+s d0 CombustionLimiter 0
 sleep 4
 j medSpeed
 spinDown:
-s Centrifuge On 0
-l CurrentRPM Centrifuge Rpm
+s d0 On 0
+l CurrentRPM d0 Rpm
 blt CurrentRPM MinRPM preStart
 j spinDown</Instructions>
 </InstructionData>
