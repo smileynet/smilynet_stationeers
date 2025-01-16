@@ -3,19 +3,24 @@
   <DateTime>133815132402369428</DateTime>
   <GameVersion>0.2.5370.24111</GameVersion>
   <Title>Harvie Controller</Title>
-  <Description>Script to control Harvie and Hydroponic devices​</Description>
+  <Description>Script to control Harvie and Hydroponic devices inspired by CowsAreEvil's Harvie 500 script</Description>
   <Author>SMiLeY.NET</Author>
   <WorkshopFileHandle>0</WorkshopFileHandle>
   <Instructions>### Hydroponic Farming Script ###
 alias Self                db
 alias GrowthState         r0   # Growth state from Hydroponic
 alias HarvieActivateState r1
-alias Temp                r2
+alias CurrentGroup        r2
 
 define HydroponicsHash HASH("StructureHydroponicsTrayData")
 define HarvieHash      HASH("StructureHarvie")
 
-define Group1 HASH("Group 1")
+push HASH("Group 1")
+push HASH("Group 2")
+push HASH("Group 3")
+push HASH("Group 4")
+push HASH("Group 5")
+push 0
 
 define HydroSlotPlant 0  # Hydroponic "Plant" slot index
 # Growth parameter is "Growth"
@@ -30,8 +35,14 @@ define HydroSlotPlant 0  # Hydroponic "Plant" slot index
 #    0..4: Growing / Mature
 #    5: Seeding
 
+Init:
+move sp 0
+
 Main:
 yield
+add sp sp 1
+peek GroupName
+beqz GroupName Init
 jal HandleFarming
 j Main
 
@@ -51,6 +62,5 @@ sbn HarvieHash Group1 Harvest 1
 j FarmingDone
 
 FarmingDone:
-sleep 5
 j ra</Instructions>
 </InstructionData>
