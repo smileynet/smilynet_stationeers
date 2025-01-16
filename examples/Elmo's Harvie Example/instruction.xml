@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <DateTime>133815132054317058</DateTime>
+  <GameVersion>0.2.5370.24111</GameVersion>
+  <Title>Elmo's Harvie Example</Title>
+  <Description>IC Housing​</Description>
+  <Author>SMiLeY.NET</Author>
+  <WorkshopFileHandle>0</WorkshopFileHandle>
+  <Instructions>alias Sorter d0 #+d3
+alias Harvie d1 #+d4
+alias Tray d2 #+d5
+#It can handle two sets
+alias HarvieBusy r1
+alias GotSeed r2
+alias GotFertilizer r3
+alias InputHash r4
+alias SeedReady r5
+alias PlantInTray r6
+alias FertilizerInTray r7
+alias TimeoutCounter r8
+alias SeedCount r9
+alias ResetCounter r10
+alias HarvieSet r13
+alias yieldFlag r14
+Start:
+seqz yieldFlag yieldFlag
+brgtz yieldFlag 3 #ToSwitch
+yield
+jr 2 #ToE
+jal Switch
+bdns Sorter Start
+bdns Harvie Start
+bdns Tray Start
+s Sorter On 1 #E
+s Sorter Mode 2
+s Harvie On 1
+s db Setting ResetCounter
+ls PlantInTray Tray 0 Occupied
+l HarvieBusy Harvie Activate
+sgtz HarvieBusy HarvieBusy
+#max GotSeed GotSeed PlantInTray
+sub TimeoutCounter TimeoutCounter HarvieBusy
+sub TimeoutCounter TimeoutCounter PlantInTray
+add TimeoutCounter TimeoutCounter GotSeed
+max TimeoutCounter TimeoutCounter 0
+brlt TimeoutCounter 10 3 #ToD
+move GotSeed PlantInTray
+move TimeoutCounter 0
+ls InputHash Sorter 0 OccupantHash #D sorter
+breqz InputHash 5 #ToB
+jal IsSeed
+sgt r0 r0 GotSeed
+add GotSeed GotSeed r0
+s Sorter Output r0 #C
+add ResetCounter ResetCounter 1 #B
+mul ResetCounter ResetCounter HarvieBusy
+brle ResetCounter 12 4
+s Harvie Activate 0
+move ResetCounter 0
+j Start
+bgtz HarvieBusy Start
+ls InputHash Harvie 0 Occupied #PlantCheck
+bgtz PlantInTray HarvestCheck
+beqz InputHash HarvestCheck
+s Harvie Plant 1
+HarvestCheck:
+ls r0 Tray 0 Mature
+blez r0 PickSeedCheck
+s Harvie Harvest 1
+ls InputHash Harvie 0 OccupantHash
+jal IsSeed
+move GotSeed r0
+PickSeedCheck:
+ls SeedReady Tray 0 Seeding
+blez SeedReady Start
+s Harvie Harvest 1
+j Start
+IsSeed:
+move r0 1
+beq InputHash -1290755415 ra
+beq InputHash -1990600883 ra
+beq InputHash 1005571172 ra
+beq InputHash 1423199840 ra
+beq InputHash -1691151239 ra
+beq InputHash 1783004244 ra
+beq InputHash -1922066841 ra
+beq InputHash -654756733 ra
+move r0 0
+j ra
+Switch:
+seqz HarvieSet HarvieSet
+mul sp HarvieSet 30
+push GotSeed
+push ResetCounter
+push TimeoutCounter
+breqz HarvieSet 2
+sub sp sp 60
+add sp sp 30
+pop TimeoutCounter
+pop ResetCounter
+pop GotSeed
+alias Sorter d0
+alias Harvie d1
+alias Tray d2
+beqz HarvieSet ra
+alias Sorter d3
+alias Harvie d4
+alias Tray d5
+j ra</Instructions>
+</InstructionData>
