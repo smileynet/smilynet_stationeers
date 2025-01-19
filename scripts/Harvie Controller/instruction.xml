@@ -35,30 +35,32 @@ define HydroSlotPlant 0  # Hydroponic "Plant" slot index
 #    0..4: Growing / Mature
 #    5: Seeding
 
+s Self Setting 1
+
 Init:
 move sp 0
 
 Main:
 yield
 add sp sp 1
-peek GroupName
-beqz GroupName Init
+peek CurrentGroup
+beqz CurrentGroup Init
 jal HandleFarming
 j Main
 
 HandleFarming:
-lbns GrowthState HydroponicsHash Group1 HydroSlotPlant Growth Maximum
+lbns GrowthState HydroponicsHash CurrentGroup HydroSlotPlant Growth Maximum
 s Self Setting GrowthState
 beq GrowthState -1 DoPlant
 beq GrowthState 5 DoHarvest
 j FarmingDone
 
 DoPlant:
-sbn HarvieHash Group1 Plant 1
+sbn HarvieHash CurrentGroup Plant 1
 j FarmingDone
 
 DoHarvest:
-sbn HarvieHash Group1 Harvest 1
+sbn HarvieHash CurrentGroup Harvest 1
 j FarmingDone
 
 FarmingDone:
