@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <InstructionData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <DateTime>133804148992312135</DateTime>
+  <DateTime>133816394956623442</DateTime>
   <GameVersion>0.2.5370.24111</GameVersion>
-  <Title>GFG Management</Title>
-  <Description>Manages power sources and displays power related functions.​</Description>
+  <Title>Combustion Centrifuge</Title>
+  <Description>GFG​</Description>
   <Author>SMiLeY.NET</Author>
   <WorkshopFileHandle>0</WorkshopFileHandle>
   <Instructions>### Power Management ###

@@ -26,30 +26,33 @@ alias CurrentIrradiance r9
 define CableAnalyzerHash  HASH("StructureCableAnalysizer")
 define CableAnalyzerIn    HASH("Cable Analyzer - Power In")
 define CableAnalyzerOut   HASH("Cable Analyzer - Power Out")
-define StationBatteryHash HASH("StructureBattery")
+#define StationBatteryHash HASH("StructureBattery")
+define StationBatteryHash HASH("StructureBatteryLarge")
 define SolidGeneratorHash HASH("StructureSolidFuelGenerator")
 define MediumLEDHash      HASH("StructureConsoleLED1x2")
+define SmallLEDHash       HASH("StructureConsoleLED5")
 define PowerInLED         HASH("LED - Power In")
 define PowerOutLED        HASH("LED - Power Out")
 define DaySensorHash      HASH("StructureDaylightSensor")
 define SolarPanelHash     HASH("StructureSolarPanelDual")
+define SolarPanelHeavyHash     HASH("StructureSolarPanelDualReinforced")
 
 # Power Settings
 define PowerMode 2 # LED Display Mode
 define MinBatteryRatio 0.2
-define MaxBatteryRatio 0.8
+define MaxBatteryRatio 0.5
 define MinIrradiance 1
 
 # Offsets for Solar Panel
-define PanelHorizontalOffset 180
+define PanelHorizontalOffset 90
 define PanelVerticalOffset   90
 
 Init:
-sbn MediumLEDHash PowerInLED  Mode PowerMode
-sbn MediumLEDHash PowerInLED  Color Color.Green
+sbn SmallLEDHash PowerInLED  Mode PowerMode
+sbn SmallLEDHash PowerInLED  Color Color.Green
 
-sbn MediumLEDHash PowerOutLED Mode PowerMode
-sbn MediumLEDHash PowerOutLED Color Color.Red
+sbn SmallLEDHash PowerOutLED Mode PowerMode
+sbn SmallLEDHash PowerOutLED Color Color.Red
 
 Main:
 yield
@@ -61,10 +64,10 @@ j Main
 
 HandlePowerConsumption:
 lbn PowerInputAmt  CableAnalyzerHash CableAnalyzerIn  PowerActual Maximum
-sbn MediumLEDHash   PowerInLED       Setting          PowerInputAmt
+sbn SmallLEDHash   PowerInLED       Setting          PowerInputAmt
 
 lbn PowerOutputAmt CableAnalyzerHash CableAnalyzerOut PowerActual Maximum
-sbn MediumLEDHash  PowerOutLED       Setting          PowerOutputAmt
+sbn SmallLEDHash  PowerOutLED       Setting          PowerOutputAmt
 j ra
 
 HandleSolar:
@@ -76,6 +79,10 @@ sub AdjustedVerticalAngle   PanelVerticalOffset VerticalAngle
 
 sb SolarPanelHash Horizontal AdjustedHorizontalAngle
 sb SolarPanelHash Vertical   AdjustedVerticalAngle
+sb SolarPanelHeavyHash Horizontal AdjustedHorizontalAngle
+sb SolarPanelHeavyHash Vertical   AdjustedVerticalAngle
+
+# TODO: Pre-orient for morning
 j ra
 
 HandleNightLights:
