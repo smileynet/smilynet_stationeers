@@ -6,110 +6,127 @@
   <Description>GFG​</Description>
   <Author>SMiLeY.NET</Author>
   <WorkshopFileHandle>0</WorkshopFileHandle>
-  <Instructions>### Power Management ###
-alias Self db
-alias SleepToggle d0
-
-alias CurrentTemp r0
-alias CurrentBatteryRatio r1
-alias PIDError r2
-alias Proportional r3
-alias PreviousError r4
-alias Integral r5
-alias Derivative r6
-alias Setpoint r7
-alias PIDOutput r8
-alias GeneratorActive r9
-alias Temp r10
-alias OnState r11
-alias CurrentPressure r12
-
-define MaxTemp 310
-define MinPressure 80
-define MaxPressure 100
-
-define SetPoint 0.8 # Battery Ratio
-define Kp 200 # Proportional Gain
-define Ki 40 # Integral Gain
-define Kd 20 # Derivative Gain
-define MinOutput 0
-define MaxOutput 50
-define FilterTicks 4 # Try 3-5
-define RegulatorMode -1 # Decrease when too high
-define SPDeviceMultiplier 1
-define MaxIntegral 20    #Integral windup clamp - tune to system
-define MinIntegral -20
-define DeltaT 0.5
-
-define GasFuelGenerator   HASH("StructureGasGenerator")
-define PressureRegulator  HASH("StructurePressureRegulator")
-define GFGRegulator       HASH("Pressure Regulator - GFG")
-define StationBatteryHash HASH("StructureBattery")
-define ActiveVentHash HASH("StructureActiveVent")
-define GFGRoomOut HASH("Active Vent - GFG Room Out")
-define GFGRoomIn HASH("Active Vent - GFG Room In")
-define GasSensorHash HASH("StructureGasSensor")
-define GFGRoomSensor HASH("Gas Sensor - GFG")
-
-Init:
-sbn PressureRegulator GFGRegulator On 1
-move PreviousError 0
-move Integral 0
-
-Main:
+  <Instructions>### N2OH Combustion Centerfuge ###
+alias Centrifuge d0
+alias CurrentReagents r0
+alias CurrentRPM r1
+alias CurrentStress r2
+alias OnOff r3
+define MinRPM 15
+define MaxStress 80.0
+define HigherStress 50.0
+define HighStress 35.0
+define MedStress 25.0
+define LowStress 20.0
+define MedTransRPM 200 # 200+ med speed
+define HighTransRPM 400 #400+ high speed
+define HigherTransRPM 700 #700+ higher speed
+define MaxTransRPM 1000 #1000+ max speed
+define MaxReagents 2500
+define MinReagents 2
+preStart:
+l CurrentRPM Centrifuge Rpm
+bgt CurrentRPM MedTransRPM main
+s Centrifuge On 0
+s Centrifuge Throttle 0
+s Centrifuge CombustionLimiter 0
+blt CurrentRPM MinRPM checkReagents
+j preStart
+checkReagents:
+l CurrentReagents Centrifuge Reagents
+blt CurrentReagents MinReagents close
+bgt CurrentReagents MinReagents empty
+j checkReagents
+empty:
+s Centrifuge Open 1
+j checkReagents
+close:
+s Centrifuge Open 0
+s Centrifuge On 1
+l CurrentStress Centrifuge Stress
+bnez CurrentStress close
+j main
+main:
+l CurrentStress Centrifuge Stress
+l CurrentRPM Centrifuge Rpm
+l CurrentReagents Centrifuge Reagents
+l OnOff Centrifuge On
+beqz OnOff spinDown
+bgt CurrentStress MaxStress spinDown
+bgt CurrentReagents MaxReagents spinDown
+blt CurrentRPM MedTransRPM lowSpeed # less 200
+blt CurrentRPM HighTransRPM medSpeed # less 400
+blt CurrentRPM HigherTransRPM highSpeed # less 800
+blt CurrentRPM MaxTransRPM higherSpeed # less 1000
+bgt CurrentRPM MaxTransRPM maxSpeed #1000+
+j main
+lowSpeed:
+l CurrentStress Centrifuge Stress
+bgt CurrentStress LowStress pulseSlow
+s Centrifuge On 1
+s Centrifuge Open 0
+s Centrifuge Throttle 10
+s Centrifuge CombustionLimiter 10
+sleep 2
+s Centrifuge Throttle 0
+s Centrifuge CombustionLimiter 0
+sleep 2
+j main
+medSpeed:
+l CurrentStress Centrifuge Stress
+bgt CurrentStress MedStress pulseSlow
+s Centrifuge Throttle 20
+s Centrifuge CombustionLimiter 20
+sleep 2
+s Centrifuge Throttle 10
+s Centrifuge CombustionLimiter 10
+sleep 2
 yield
-
-s Self Setting CurrentTemp
-jal HandlePressure
-jal HandleFuelGenerator
-j Main
-
-HandlePressure:
-lbn CurrentPressure GasSensorHash GFGRoomSensor Pressure Maximum
-#s Self Setting CurrentPressure
-blt CurrentPressure MinPressure IncreasePressure
-bgt CurrentPressure MaxPressure DecreasePressure
-#sbn ActiveVentHash GFGRoomOut On 0
-j ra
-
-IncreasePressure:
-sbn ActiveVentHash GFGRoomIn On 1
-sbn ActiveVentHash GFGRoomOut On 0
-j ra
-
-DecreasePressure:
-sbn ActiveVentHash GFGRoomOut On 1
-sbn ActiveVentHash GFGRoomIn On 0
-j ra
-
-HandleFuelGenerator:
-lbn CurrentTemp GasSensorHash GFGRoomSensor Temperature Maximum
-blt CurrentTemp MaxTemp RunGenerator
-sb GasFuelGenerator On 0
-j ra
-
-RunGenerator:
-lb CurrentBatteryRatio StationBatteryHash Ratio Average
-sub PIDError SetPoint CurrentBatteryRatio
-move Proportional PIDError
-mul Proportional Proportional Kp
-mul Temp PIDError Ki
-mul Temp Temp DeltaT
-add Integral Integral Temp
-min Integral MaxIntegral Integral
-max Integral MinIntegral Integral
-sub Derivative PIDError PreviousError
-div Derivative Derivative DeltaT
-mul Derivative Derivative Kd
-move PIDOutput Proportional
-add PIDOutput PIDOutput Integral
-add PIDOutput PIDOutput Derivative
-min PIDOutput MaxOutput PIDOutput
-max PIDOutput MinOutput PIDOutput
-sbn PressureRegulator GFGRegulator Setting PIDOutput
-#s Self Setting PIDOutput
-sgez GeneratorActive PIDOutput
-sb GasFuelGenerator On GeneratorActive
-move PreviousError PIDError
-j ra</Instructions>
+j main
+highSpeed:
+l CurrentStress Centrifuge Stress
+bgt CurrentStress HigherStress pause
+s Centrifuge Throttle 30
+s Centrifuge CombustionLimiter 30
+sleep 2
+s Centrifuge Throttle 20
+s Centrifuge CombustionLimiter 20
+sleep 2
+j main
+higherSpeed:
+l CurrentStress Centrifuge Stress
+bgt CurrentStress HighStress highSpeed
+s Centrifuge Throttle 60
+s Centrifuge CombustionLimiter 60
+sleep 2
+s Centrifuge Throttle 40
+s Centrifuge CombustionLimiter 40
+sleep 1
+j main
+maxSpeed:
+s Centrifuge Throttle 80
+s Centrifuge CombustionLimiter 80
+j main
+pulseSlow:
+s Centrifuge Throttle 0
+s Centrifuge CombustionLimiter 0
+sleep 4
+s Centrifuge Throttle 10
+s Centrifuge CombustionLimiter 10
+sleep 1
+l CurrentStress Centrifuge Stress
+l CurrentRPM Centrifuge Rpm
+blt CurrentStress LowStress main
+blt CurrentRPM MinRPM preStart
+j main
+pause:
+s Centrifuge Throttle 0
+s Centrifuge CombustionLimiter 0
+sleep 4
+j medSpeed
+spinDown:
+s Centrifuge On 0
+l CurrentRPM Centrifuge Rpm
+blt CurrentRPM MinRPM preStart
+j spinDown</Instructions>
 </InstructionData>
